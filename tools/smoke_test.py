@@ -228,15 +228,16 @@ def main():
     r = step("11-home-again")
     tap(r, "Ask or add an expense…")
     r = step("12-command-sheet")
-    type_into(r, 0, "spent 450 on groceries")
-    adb("shell", "input", "keyevent", "66")  # enter submits
-    time.sleep(1)
-    hide_keyboard()
-    r = step("13-command-typed")
-    expect(r, "13-command-typed", "450")
-    adb("shell", "input", "keyevent", "4")
+    # Example chips run the same parser as typing, without the soft keyboard covering the small screen.
+    tap(r, "Add 300 rupees fuel expense for today", scroll=False)
+    r = step("13-command-preview")
+    expect(r, "13-command-preview", "New expense", "300")
+    tap(r, "Add expense", last=True)
+    r = step("13b-command-added")
+    expect(r, "13b-command-added", "Undo")
     adb("shell", "input", "keyevent", "4")
     r = step("14-sheet-closed")
+    expect(r, "14-sheet-closed", "PKR 600.00", "2 expenses")
     if find(r, "Settings") is None:
         adb("shell", "input", "keyevent", "4")
         r = step("14b-sheet-closed")
