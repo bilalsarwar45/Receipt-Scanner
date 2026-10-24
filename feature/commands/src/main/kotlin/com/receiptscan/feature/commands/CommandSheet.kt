@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -115,7 +116,10 @@ fun CommandSheet(
 ) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state) {
-        CommandPanel(parser, executor, clock, zone, settings, callbacks, startWithVoice, initialText, selectedRecord, Modifier.navigationBarsPadding().imePadding())
+        // Fixed height: the panel grows when a preview or results appear, and a sheet whose content height
+        // changes past the screen can lose its anchor and slide away. The panel scrolls inside instead.
+        CommandPanel(parser, executor, clock, zone, settings, callbacks, startWithVoice, initialText, selectedRecord,
+            Modifier.fillMaxHeight(0.92f).navigationBarsPadding().imePadding())
     }
 }
 

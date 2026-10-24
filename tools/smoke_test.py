@@ -98,6 +98,16 @@ def step(name, pkg=None):
             break
         time.sleep(3)
         root = clear_system_dialogs(dump(), pkg)
+    if len(texts(root)) < 3:
+        focus = [l.strip() for l in adb("shell", "dumpsys", "window", check=False).splitlines() if "mCurrentFocus" in l or "mFocusedApp" in l]
+        print("(sparse screen) focus:", focus)
+        pid = adb("shell", "pidof", pkg, check=False).strip()
+        if pid:
+            log = adb("logcat", "-d", "-t", "400", "--pid", pid.split()[0], check=False).splitlines()
+            print("(sparse screen) app log tail:\n" + "\n".join(log[-40:]))
+        if root is not None:
+            nodes = [(n.get("class"), n.get("bounds"), n.get("content-desc") or n.get("text")) for n in root.iter("node")]
+            print("(sparse screen) nodes:", nodes[:25])
     adb("shell", "screencap", "-p", f"/sdcard/{name}.png", check=False)
     adb("pull", f"/sdcard/{name}.png", f"{OUT}/{name}.png", check=False)
     shown = texts(root)
