@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -121,7 +122,7 @@ class PackDownloadWorker(context: Context, params: WorkerParameters) : Coroutine
         // Report progress from a polling loop so the blocking download is not slowed down.
         val partial = File(applicationContext.filesDir, "packs/${spec.id}/.download-${spec.version}.part")
         val poller = kotlinx.coroutines.coroutineScope {
-            val job = kotlinx.coroutines.launch {
+            val job = launch {
                 while (true) {
                     setProgress(workDataOf(PackManager.KEY_DONE to (if (partial.exists()) partial.length() else 0L), PackManager.KEY_TOTAL to spec.sizeBytes))
                     kotlinx.coroutines.delay(500)
