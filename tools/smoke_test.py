@@ -92,6 +92,11 @@ def clear_system_dialogs(root, pkg):
 def step(name, pkg=APP):
     time.sleep(2.5)
     root = clear_system_dialogs(dump(), pkg)
+    for _ in range(3):  # a dump taken mid-animation can be nearly empty
+        if len(texts(root)) >= 3:
+            break
+        time.sleep(3)
+        root = clear_system_dialogs(dump(), pkg)
     adb("shell", "screencap", "-p", f"/sdcard/{name}.png", check=False)
     adb("pull", f"/sdcard/{name}.png", f"{OUT}/{name}.png", check=False)
     shown = texts(root)
@@ -207,7 +212,7 @@ def main():
     expect(r, "05-category-picked", "300")
     tap(r, "Add expense", last=True, scroll=False)
     r = step("06-after-add-home")
-    expect(r, "06-after-add-home", "Added")
+    expect(r, "06-after-add-home", "PKR 300.00", "1 expense")
     tap(r, "Library", last=True)
     r = step("07-library")
     tap(r, "Expenses", scroll=False)
@@ -215,7 +220,7 @@ def main():
     expect(r, "08-library-expenses", "300", "Fuel")
     tap(r, "Tools", last=True, scroll=False)
     r = step("09-tools")
-    expect(r, "09-tools", "QR code", "Plants", "Calories")
+    expect(r, "09-tools", "Search 14 tools", "Receipts", "Bills")
     tap(r, "Insights", last=True, scroll=False)
     r = step("10-insights")
     expect(r, "10-insights", "300")
