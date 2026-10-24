@@ -68,6 +68,9 @@ val androidModules = listOf(
     ":scanner:expiry",
     ":scanner:math",
     ":scanner:product",
+    ":scanner:nutrition",
+    ":scanner:invoice",
+    ":scanner:wifi",
     ":app",
 )
 
