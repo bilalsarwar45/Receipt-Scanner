@@ -53,7 +53,9 @@ val jvmModules = listOf(
 )
 
 // Android modules: UI, platform adapters, persistence and the apps.
-val androidModules = listOf<String>(
+val androidModules = listOf(
+    ":core:design-system",
+    ":app",
 )
 
 (jvmModules + if (jvmOnly) emptyList() else androidModules).forEach { path ->
