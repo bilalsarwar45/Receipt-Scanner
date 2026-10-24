@@ -105,11 +105,22 @@ def step(name, pkg=APP):
     return root
 
 
+_size = []
+
+
+def screen():
+    if not _size:
+        m = re.search(r"(\d+)x(\d+)", adb("shell", "wm", "size", check=False))
+        _size.extend(map(int, m.groups()) if m else (320, 640))
+    return _size[0], _size[1]
+
+
 def tap(root, label, scroll=True, **kw):
     p = find(root, label, **kw)
     tries = 0
     while p is None and scroll and tries < 4:
-        adb("shell", "input", "swipe", "540", "1700", "540", "700", "300")
+        w, h = screen()
+        adb("shell", "input", "swipe", str(w // 2), str(h * 7 // 10), str(w // 2), str(h * 3 // 10), "300")
         time.sleep(1.2)
         root = dump()
         p = find(root, label, **kw)

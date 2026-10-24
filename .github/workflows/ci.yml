@@ -68,6 +68,7 @@ jobs:
             echo "== $apk"
             $BT/zipalign -c -P 16 -v 4 "$apk" | grep -E "lib/|Verification" || true
             $BT/apksigner verify --print-certs "$apk" | head -5
+            $BT/aapt2 dump permissions "$apk" | grep -o "name='[^']*'" | tr '\n' ' '; echo
             echo "size $(stat -c%s "$apk")  sha256 $(sha256sum "$apk" | cut -d' ' -f1)"
           done
           echo "==== assets manifest"; cat build/assets-manifest.txt || echo "no manifest"
@@ -108,9 +109,8 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
-          profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -memory 4096 -noaudio -no-boot-anim -camera-back emulated
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
           script: python3 tools/smoke_test.py "$(find apks -path '*app*' -name '*debug*.apk' | head -1)" "$(find apks -path '*scanner-host*' -name '*debug*.apk' | head -1)"
       - uses: actions/upload-artifact@v4
         if: always()
