@@ -65,9 +65,33 @@ def crashed(pkg):
     return [l for l in log.splitlines() if pkg in l or "FATAL EXCEPTION" in l]
 
 
+def clear_system_dialogs(root, pkg):
+    """Emulator system apps (launcher, System UI) sometimes stall on slow CI machines and show an ANR
+    dialog over everything. Close those; an ANR in the app under test is recorded as a failure."""
+    for _ in range(4):
+        shown = " | ".join(texts(root))
+        if "isn't responding" not in shown and "keeps stopping" not in shown:
+            return root
+        ours = ("Receipt" in shown and "Scan isn't responding" in shown) or ("Scanner host" in shown and "isn't responding" in shown)
+        if ours:
+            failures.append("ANR in app: " + shown[:120])
+            print("!!! app not responding:", shown)
+            label = "Wait"
+        else:
+            print("(closing system dialog: " + shown[:80] + ")")
+            label = "Wait" if find(root, "Wait") else "Close app"
+        p = find(root, label)
+        if p is None:
+            return root
+        adb("shell", "input", "tap", str(p[0]), str(p[1]))
+        time.sleep(2)
+        root = dump()
+    return root
+
+
 def step(name, pkg=APP):
     time.sleep(2.5)
-    root = dump()
+    root = clear_system_dialogs(dump(), pkg)
     adb("shell", "screencap", "-p", f"/sdcard/{name}.png", check=False)
     adb("pull", f"/sdcard/{name}.png", f"{OUT}/{name}.png", check=False)
     shown = texts(root)
@@ -139,6 +163,10 @@ def type_text(s):
 
 def main():
     app_apk = sys.argv[1]
+    # Let the freshly booted emulator settle so its launcher is idle before the app starts.
+    adb("shell", "input", "keyevent", "3")
+    time.sleep(25)
+    clear_system_dialogs(dump(), APP)
     adb("logcat", "-c", check=False)
     print(adb("install", "-r", "-g", app_apk))
     adb("shell", "am", "start", "-W", "-n", f"{APP}/com.receiptscan.app.MainActivity")
