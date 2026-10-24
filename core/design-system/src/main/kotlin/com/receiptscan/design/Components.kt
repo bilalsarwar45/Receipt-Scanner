@@ -241,8 +241,6 @@ fun SourceBadge(source: ValueSource, modifier: Modifier = Modifier, enteredLabel
     }
 }
 
-@Composable fun ConfirmedBadge(modifier: Modifier = Modifier) = StatusBadge(BadgeKind.OK, "Confirmed", modifier)
-@Composable fun NeedsReviewBadge(modifier: Modifier = Modifier) = StatusBadge(BadgeKind.WARN, "Needs review", modifier)
 
 // ---------------------------------------------------------------- Tiles and cards
 

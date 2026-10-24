@@ -299,7 +299,7 @@ private fun WarrantyForm(graph: AppGraph, state: AppState, w: WarrantyRow?, rece
         DateField("Return by (optional)", returnBy, { returnBy = it })
         DateField("Warranty until (optional)", until, { until = it }, helper = if (until == null) "Only from the label, card or receipt. We don't guess warranty terms." else null)
         AppTextField(terms, { terms = it }, "Terms note (optional)", singleLine = false, minLines = 2)
-        if (prefill?.termsSource?.isNotBlank() == true) Text("Dates from: ${prefill.termsSource}", style = AppType.cap, color = t.muted)
+        prefill?.termsSource?.takeIf { it.isNotBlank() }?.let { Text("Dates from: $it", style = AppType.cap, color = t.muted) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Remind me", style = AppType.b1, color = t.text)

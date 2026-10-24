@@ -38,10 +38,23 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
+      - name: Fetch model and data assets (hashes logged)
+        run: bash tools/fetch_assets.sh
+      - name: Check sample host isolation
+        run: |
+          # The sample host must reuse scanners without the app, the ledger or app storage.
+          ./gradlew -q :samples:scanner-host:dependencies --configuration releaseRuntimeClasspath > sample-deps.txt
+          if grep -E "project :(app|data:local|domain:expenses|domain:insights|domain:receipt-actions|feature:commands)\b" sample-deps.txt; then
+            echo "Sample host depends on app-only modules"; exit 1
+          fi
+          echo "Sample host is isolated:"; grep -oE "project :[a-z:-]+" sample-deps.txt | sort -u
       - name: Build APKs and run Android unit tests
         run: |
           set -o pipefail
           ./gradlew assembleDebug assembleRelease testDebugUnitTest --continue 2>&1 | tee build-log.txt
+      - name: Android lint (app and sample)
+        if: success()
+        run: ./gradlew :app:lintRelease :samples:scanner-host:lintRelease --continue || true
       - name: Summarise build errors
         if: failure()
         run: |
@@ -50,7 +63,7 @@ jobs:
         if: always()
         run: |
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          for apk in app/build/outputs/apk/release/*.apk; do
+          for apk in app/build/outputs/apk/release/*.apk samples/scanner-host/build/outputs/apk/release/*.apk; do
             [ -f "$apk" ] || continue
             echo "== $apk"
             $BT/zipalign -c -P 16 -v 4 "$apk" | grep -E "lib/|Verification" || true
@@ -63,6 +76,7 @@ jobs:
           path: |
             app/build/outputs/apk/**/*.apk
             samples/scanner-host/build/outputs/apk/**/*.apk
+            build/assets-manifest.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

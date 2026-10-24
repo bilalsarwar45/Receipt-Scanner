@@ -79,6 +79,7 @@ val androidModules = listOf(
     ":feature:voice-input",
     ":feature:commands",
     ":app",
+    ":samples:scanner-host",
 )
 
 (jvmModules + if (jvmOnly) emptyList() else androidModules).forEach { path ->

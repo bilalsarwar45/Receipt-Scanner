@@ -11,3 +11,8 @@ captures/
 *.aab
 /kotlin-js-store/
 .kotlin/
+
+# Fetched by tools/fetch_assets.sh in CI (see docs/MODEL_AND_DATA_REGISTER.md)
+scanner/plant/src/main/assets/models/
+scanner/food/src/main/assets/models/
+scanner/food/src/main/assets/packs/
