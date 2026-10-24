@@ -20,11 +20,15 @@ object PlantPostprocess {
 
     fun topK(scores: FloatArray, labels: List<SpeciesLabel>, k: Int = 3, minScore: Float = 0.15f, clearLead: Float = 0.5f): PlantOutcome {
         require(scores.size == labels.size) { "Label map has ${labels.size} entries but the model returned ${scores.size} scores" }
-        val ranked = labels.indices
-            .filter { labels[it].scientificName.lowercase() !in nonSpecies }
-            .sortedByDescending { scores[it] }
+        return fromTop(labels.indices.map { PlantCandidate(labels[it], scores[it]) }, k, minScore, clearLead)
+    }
+
+    /** Same rules for runtimes that already return only the top categories. */
+    fun fromTop(candidates: List<PlantCandidate>, k: Int = 3, minScore: Float = 0.15f, clearLead: Float = 0.5f): PlantOutcome {
+        val ranked = candidates
+            .filter { it.label.scientificName.trim().lowercase() !in nonSpecies }
+            .sortedByDescending { it.score }
             .take(k)
-            .map { PlantCandidate(labels[it], scores[it]) }
             .filter { it.score >= minScore }
         if (ranked.isEmpty()) return PlantOutcome.NoMatch
         // Ask for another photo when the best match is not clearly ahead.
