@@ -66,7 +66,7 @@ class RoomLedgerStoreTest {
 
     @After fun close() = db.close()
 
-    @Test fun `receipt round trips with items exactly`() = runBlocking {
+    @Test fun `receipt round trips with items exactly`(): Unit = runBlocking {
         ledger.saveReceiptDraft(receipt("fm"))
         val loaded = store.receipt("fm")!!
         assertThat(loaded.items.map { it.lineTotal }).containsExactly(pkr("640"), pkr("1200")).inOrder()
@@ -75,7 +75,7 @@ class RoomLedgerStoreTest {
         assertThat(loaded.purchaseDate).isEqualTo(LocalDate.of(2026, 10, 23))
     }
 
-    @Test fun `voice add is idempotent per execution key`() = runBlocking {
+    @Test fun `voice add is idempotent per execution key`(): Unit = runBlocking {
         val new = NewExpense(pkr("300"), "fuel", today, ExpenseSource.VOICE)
         val first = ledger.addExpense(new, "key-1")
         val again = ledger.addExpense(new, "key-1")
@@ -84,7 +84,7 @@ class RoomLedgerStoreTest {
         assertThat(last30().count).isEqualTo(1)
     }
 
-    @Test fun `drafts unpaid bills and voided entries are excluded from totals`() = runBlocking {
+    @Test fun `drafts unpaid bills and voided entries are excluded from totals`(): Unit = runBlocking {
         ledger.saveReceiptDraft(receipt("techhub", "TechHub", "6500"))
         ledger.saveInvoice(Invoice("bill", "City Power", "INV-1", today, today.plusDays(6), pkr("8240"), InvoiceStatus.UNPAID, false, "utilities", clock.instant()))
         val added = ledger.addExpense(NewExpense(pkr("500"), "dining", today, ExpenseSource.MANUAL), "k").expense
@@ -95,7 +95,7 @@ class RoomLedgerStoreTest {
         assertThat(result.totals.single().total).isEqualTo(pkr("3800"))
     }
 
-    @Test fun `receipt attached to a voice expense does not double count`() = runBlocking {
+    @Test fun `receipt attached to a voice expense does not double count`(): Unit = runBlocking {
         val voice = ledger.addExpense(NewExpense(pkr("1500"), "groceries", LocalDate.of(2026, 10, 23), ExpenseSource.VOICE), "v1").expense
         val r = receipt("r1", total = "1520")
         assertThat(ledger.confirmReceipt(r, voice.id)).isInstanceOf(ConfirmResult.NeedsAmountChoice::class.java)
@@ -106,14 +106,14 @@ class RoomLedgerStoreTest {
         assertThat(last30().totals.single().total).isEqualTo(pkr("1520"))
     }
 
-    @Test fun `a receipt can support only one expense`() = runBlocking {
+    @Test fun `a receipt can support only one expense`(): Unit = runBlocking {
         val a = ledger.addExpense(NewExpense(pkr("10"), "fuel", today, ExpenseSource.MANUAL), "a").expense
         val b = ledger.addExpense(NewExpense(pkr("10"), "fuel", today, ExpenseSource.MANUAL), "b").expense
         store.insertLink(ExpenseSourceLink(a.id, LinkKind.RECEIPT, "r"))
         assertThrows(UniqueConstraintException::class.java) { runBlocking { store.insertLink(ExpenseSourceLink(b.id, LinkKind.RECEIPT, "r")) } }
     }
 
-    @Test fun `failed transaction rolls back every write`() = runBlocking {
+    @Test fun `failed transaction rolls back every write`(): Unit = runBlocking {
         runCatching {
             store.transaction {
                 ledger.addExpense(NewExpense(pkr("10"), "fuel", today, ExpenseSource.MANUAL), "rollback")
@@ -124,7 +124,7 @@ class RoomLedgerStoreTest {
         assertThat(last30().isEmpty).isTrue()
     }
 
-    @Test fun `delete undo and purge`() = runBlocking {
+    @Test fun `delete undo and purge`(): Unit = runBlocking {
         ledger.confirmReceipt(receipt("fm"))
         val token = ledger.deleteReceipt("fm")
         assertThat(last30().isEmpty).isTrue()
@@ -135,7 +135,7 @@ class RoomLedgerStoreTest {
         assertThat(store.receipt("fm")).isNull()
     }
 
-    @Test fun `full text search finds receipts by item name and merchant`() = runBlocking {
+    @Test fun `full text search finds receipts by item name and merchant`(): Unit = runBlocking {
         ledger.confirmReceipt(receipt("fm"))
         ledger.confirmReceipt(receipt("cafe", "Corner Café", "1680"))
         assertThat(store.receipts(ReceiptFilter(text = "rice")).map { it.id }).containsExactly("fm", "cafe")

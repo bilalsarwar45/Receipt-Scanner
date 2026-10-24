@@ -56,6 +56,10 @@ val jvmModules = listOf(
 val androidModules = listOf(
     ":core:design-system",
     ":data:local",
+    ":core:capture",
+    ":core:ocr",
+    ":core:barcode",
+    ":core:ml-runtime",
     ":app",
 )
 
