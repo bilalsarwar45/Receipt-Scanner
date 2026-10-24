@@ -42,3 +42,6 @@ jobs:
             v=$(curl -s "https://dl.google.com/dl/android/maven2/$a/maven-metadata.xml" | grep -o '<version>[^<]*</version>' | sed 's/<[^>]*>//g' | grep -viE 'alpha|beta|rc|dev' | tail -4 | tr '\n' ' ')
             echo "$a: $v"
           done
+          echo "AGP 8.13.x:"; curl -s https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml | grep -o '8\.13\.[0-9]*' | sort -u | tr '\n' ' '; echo
+          echo "Compose BOM 2025.x:"; curl -s https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml | grep -o '2025\.[0-9.]*' | sort -u | tr '\n' ' '; echo
+          echo "MediaPipe 0.10.x:"; curl -s https://dl.google.com/dl/android/maven2/com/google/mediapipe/tasks-vision/maven-metadata.xml | grep -o '0\.10\.[0-9.]*' | sort -u | tr '\n' ' '; echo
