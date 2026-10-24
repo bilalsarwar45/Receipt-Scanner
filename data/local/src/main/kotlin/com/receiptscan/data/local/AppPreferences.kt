@@ -40,6 +40,7 @@ data class Settings(
     val translateTarget: String = "en",
     val budgetAlerts: Boolean = true,
     val onboarded: Boolean = false,
+    val micAsked: Boolean = false,
 )
 
 class AppPreferences(private val context: Context) {
@@ -67,6 +68,7 @@ class AppPreferences(private val context: Context) {
         val translateTarget = stringPreferencesKey("translate_target")
         val budgetAlerts = booleanPreferencesKey("budget_alerts")
         val onboarded = booleanPreferencesKey("onboarded")
+        val micAsked = booleanPreferencesKey("mic_asked")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
@@ -94,6 +96,7 @@ class AppPreferences(private val context: Context) {
             translateTarget = p[K.translateTarget] ?: "en",
             budgetAlerts = p[K.budgetAlerts] ?: true,
             onboarded = p[K.onboarded] ?: false,
+            micAsked = p[K.micAsked] ?: false,
         )
     }
 
@@ -126,5 +129,6 @@ class AppPreferences(private val context: Context) {
     suspend fun setTranslateTarget(v: String) = context.dataStore.edit { it[K.translateTarget] = v }
     suspend fun setBudgetAlerts(v: Boolean) = context.dataStore.edit { it[K.budgetAlerts] = v }
     suspend fun setOnboarded() = context.dataStore.edit { it[K.onboarded] = true }
+    suspend fun setMicAsked() = context.dataStore.edit { it[K.micAsked] = true }
     suspend fun clear() = context.dataStore.edit { it.clear() }
 }

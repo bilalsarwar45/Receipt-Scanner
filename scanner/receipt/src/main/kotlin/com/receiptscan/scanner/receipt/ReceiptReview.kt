@@ -114,7 +114,7 @@ fun ReceiptReview(result: ReceiptScan, input: ScanInput, host: ScannerHost, onAc
         val taxes = x.adjustments.filter { it.role == RowRole.TAX && !it.included }.map { it.amount.value }
         val discounts = x.adjustments.filter { it.role == RowRole.DISCOUNT }.map { it.amount.value.abs() }
         val p = ReceiptDraftPayload(
-            merchant = merchant.trim().ifEmpty { null }, date = date?.toString(), time = x.time?.value?.toString(), currency = cur.code,
+            merchant = merchant.trim().ifEmpty { null }, merchantRaw = x.merchant?.rawText, date = date?.toString(), time = x.time?.value?.toString(), currency = cur.code,
             subtotalMinor = r.subtotalPrinted?.minor, taxMinor = taxes.takeIf { it.isNotEmpty() }?.sum(cur)?.minor,
             discountMinor = discounts.takeIf { it.isNotEmpty() }?.sum(cur)?.minor, totalMinor = total?.minor,
             categoryId = category, reference = x.reference?.value, paymentMethod = x.paymentMethod?.value,

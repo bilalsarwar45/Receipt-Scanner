@@ -665,3 +665,25 @@ fun AppProgress(progress: Float?, modifier: Modifier = Modifier) {
 object DS {
     val colors @Composable get() = MaterialTheme.colorScheme
 }
+
+/** "Confirmed" (ok, dot): the receipt now counts in totals. */
+@Composable
+fun ConfirmedBadge(modifier: Modifier = Modifier) = StatusBadge(BadgeKind.OK, "Confirmed", modifier)
+
+/** "Needs review" (warn, alert icon): excluded from totals until confirmed. */
+@Composable
+fun NeedsReviewBadge(modifier: Modifier = Modifier) = StatusBadge(BadgeKind.WARN, "Needs review", modifier, AppIcons.alert)
+
+/** Tappable search-style pill that opens a command or search surface. */
+@Composable
+fun CommandPill(placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val t = skin
+    Row(
+        modifier.height(52.dp).clip(RoundedCornerShape(26.dp)).background(t.surface2).clickable(onClick = onClick).padding(horizontal = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(AppIcons.search, null, tint = t.muted)
+        Spacer(Modifier.width(10.dp))
+        Text(placeholder, style = AppType.b1, color = t.muted, maxLines = 1)
+    }
+}

@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ReceiptDraftPayload(
     val merchant: String?,
+    /** The merchant line exactly as read, so a host can learn "this text means that merchant". */
+    val merchantRaw: String? = null,
     val date: String?,
     val time: String?,
     val currency: String,
