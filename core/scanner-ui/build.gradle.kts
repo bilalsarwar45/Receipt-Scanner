@@ -49,7 +49,7 @@ dependencies {
     api(project(":core:capture"))
     api(project(":core:ocr"))
     api(project(":core:money-time"))
-    implementation(libs.androidx.activity.compose)
+    api(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
