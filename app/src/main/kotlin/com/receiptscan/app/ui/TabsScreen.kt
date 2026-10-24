@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.receiptscan.app.AppGraph
+import kotlinx.coroutines.launch
 import com.receiptscan.app.AppState
 import com.receiptscan.app.Modules
 import com.receiptscan.app.Screen
@@ -98,11 +99,10 @@ fun TabsScreen(graph: AppGraph, state: AppState) {
 }
 
 fun openTool(state: AppState, id: String, graph: AppGraph, source: ScanSource = ScanSource.Camera) {
-    graph.scope.launchTouch(graph, id)
+    graph.scope.launch { graph.prefs.touchTool(id) }
     if (id == DocumentsFeature.ID.value) state.push(Screen.Pdf) else state.push(Screen.Scanner(id, source))
 }
 
-private fun kotlinx.coroutines.CoroutineScope.launchTouch(graph: AppGraph, id: String) = kotlinx.coroutines.launch { graph.prefs.touchTool(id) }
 
 @Composable
 fun HomeTab(graph: AppGraph, state: AppState) {
@@ -229,7 +229,7 @@ fun ToolsTab(graph: AppGraph, state: AppState) {
                                 ModuleTile(info.color, info.icon)
                                 Text(info.title, style = AppType.h2, color = t.text)
                                 Text(info.subtitle, style = AppType.cap, color = t.muted, maxLines = 2)
-                                if (info.requiredPacks.isNotEmpty()) StatusBadge(BadgeKind.NEUTRAL, "Feature pack", AppIcons.download)
+                                if (info.requiredPacks.isNotEmpty()) StatusBadge(BadgeKind.NEUTRAL, "Feature pack", icon = AppIcons.download)
                             }
                         }
                     }
