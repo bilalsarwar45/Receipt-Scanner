@@ -158,6 +158,16 @@ def type_into(root, index, s):
     time.sleep(0.5)
 
 
+def hide_keyboard():
+    """Back closes only the soft keyboard when it is showing, so check first."""
+    for _ in range(2):
+        st = adb("shell", "dumpsys", "input_method", check=False)
+        if "mInputShown=true" not in st and "isInputViewShown=true" not in st:
+            return
+        adb("shell", "input", "keyevent", "4")
+        time.sleep(1)
+
+
 def expect(root, name, *labels):
     shown = " | ".join(texts(root)) + " | " + " | ".join(t for _, _, t in edits(root))
     for l in labels:
@@ -189,11 +199,12 @@ def main():
     tap(r, "Add manually")
     r = step("03-add-expense-form")
     type_into(r, 0, "300")
-    adb("shell", "input", "keyevent", "111")
+    hide_keyboard()
     r = step("04-amount-typed")
     expect(r, "04-amount-typed", "300")
     tap(r, "Fuel")
     r = step("05-category-picked")
+    expect(r, "05-category-picked", "300")
     tap(r, "Add expense", last=True, scroll=False)
     r = step("06-after-add-home")
     expect(r, "06-after-add-home", "Added")
@@ -214,6 +225,8 @@ def main():
     r = step("12-command-sheet")
     type_into(r, 0, "spent 450 on groceries")
     adb("shell", "input", "keyevent", "66")  # enter submits
+    time.sleep(1)
+    hide_keyboard()
     r = step("13-command-typed")
     expect(r, "13-command-typed", "450")
     adb("shell", "input", "keyevent", "4")
