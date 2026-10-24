@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jvm-tests:
+    name: Pure Kotlin modules (domain, parsers, engines)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew -PjvmOnly=true test --continue
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jvm-test-reports
+          path: "**/build/reports/tests/"
+
+  android:
+    name: Android build (debug + release APK, unit tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Fetch model and data assets (hashes logged)
+        run: bash tools/fetch_assets.sh
+      - name: Check sample host isolation
+        run: |
+          # The sample host must reuse scanners without the app, the ledger or app storage.
+          ./gradlew -q :samples:scanner-host:dependencies --configuration releaseRuntimeClasspath > sample-deps.txt
+          if grep -E "project :(app|data:local|domain:expenses|domain:insights|domain:receipt-actions|feature:commands)\b" sample-deps.txt; then
+            echo "Sample host depends on app-only modules"; exit 1
+          fi
+          echo "Sample host is isolated:"; grep -oE "project :[a-z:-]+" sample-deps.txt | sort -u
+      - name: Build APKs and run Android unit tests
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug assembleRelease testDebugUnitTest --continue 2>&1 | tee build-log.txt
+      - name: Android lint (app and sample)
+        if: success()
+        run: ./gradlew :app:lintRelease :samples:scanner-host:lintRelease --continue || true
+      - name: Summarise build errors
+        if: failure()
+        run: |
+          echo "==== Compiler errors"; grep -E "^e: |error:|ERROR:|What went wrong|FAILED|> .*failed|Execution failed" -A3 build-log.txt | head -400
+      - name: Check 16 KB page alignment of native libraries
+        if: always()
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          for apk in app/build/outputs/apk/release/*.apk samples/scanner-host/build/outputs/apk/release/*.apk; do
+            [ -f "$apk" ] || continue
+            echo "== $apk"
+            $BT/zipalign -c -P 16 -v 4 "$apk" | grep -E "lib/|Verification" || true
+            $BT/apksigner verify --print-certs "$apk" | head -5
+            $BT/aapt2 dump permissions "$apk" | grep -o "name='[^']*'" | tr '\n' ' '; echo
+            echo "size $(stat -c%s "$apk")  sha256 $(sha256sum "$apk" | cut -d' ' -f1)"
+          done
+          echo "==== assets manifest"; cat build/assets-manifest.txt || echo "no manifest"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apks
+          path: |
+            app/build/outputs/apk/**/*.apk
+            samples/scanner-host/build/outputs/apk/**/*.apk
+            build/assets-manifest.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-reports
+          path: |
+            **/build/reports/
+            !**/build/reports/configuration-cache/
+
+  smoke:
+    name: "Emulator smoke test (release APKs - install, launch, walk main screens)"
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: apks
+          path: apks
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Run on Android 14 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
+          script: python3 tools/smoke_test.py "$(find apks -path '*app/build*' -path '*release*' -name '*.apk' | head -1)" "$(find apks -path '*scanner-host*' -path '*release*' -name '*.apk' | head -1)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-screenshots
+          path: build/smoke/
+
+  test-release:
+    # Publishes the smoke-tested release APKs as a GitHub prerelease so they can be downloaded on a phone.
+    name: Publish test build (prerelease)
+    needs: smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/claude/project-thread-d9p915'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apks
+          path: apks
+      - name: Create or replace the test-build prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cp "$(find apks -path '*app/build*' -path '*release*' -name '*.apk' | head -1)" receipt-scan-test.apk
+          cp "$(find apks -path '*scanner-host*' -path '*release*' -name '*.apk' | head -1)" scanner-host-sample-test.apk
+          sha256sum *.apk | tee SHA256SUMS.txt
+          gh release delete test-build --yes --cleanup-tag || true
+          gh release create test-build receipt-scan-test.apk scanner-host-sample-test.apk SHA256SUMS.txt \
+            --prerelease --target "$GITHUB_SHA" --title "Test build (signed with the TEST key)" \
+            --notes "Smoke-tested release APKs from commit $GITHUB_SHA. Signed with the committed TEST key (SHA-256 5C:B1:6D:D7:B7:02:90:18:C1:53:27:2F:35:35:DA:F0:F8:17:6B:26:39:8A:79:AD:03:2F:01:77:46:7C:2C:B8). For sideloading only; not for the Play Store. See docs/RELEASE_SIGNING.md and docs/VALIDATION_REPORT.md."
+          echo "Direct link: https://github.com/$GITHUB_REPOSITORY/releases/download/test-build/receipt-scan-test.apk"

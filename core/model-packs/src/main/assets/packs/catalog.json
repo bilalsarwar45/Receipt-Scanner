@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "packs": [
+    {
+      "id": "detector-efficientdet-lite0",
+      "purpose": "Object counter: detects common objects (COCO classes) so they can be counted",
+      "version": "int8-1",
+      "provider": "Google MediaPipe model card: EfficientDet-Lite0 (int8)",
+      "url": "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite",
+      "sha256": "0720bf247bd76e6594ea28fa9c6f7c5242be774818997dbbeffc4da460c723bb",
+      "sizeBytes": 4602795,
+      "format": "file",
+      "fileName": "efficientdet_lite0.tflite",
+      "runtime": "mediapipe-tasks-vision 0.10.26.1",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://ai.google.dev/edge/mediapipe/solutions/vision/object_detector#models",
+      "provenance": "Trained on COCO 2017 by Google; downloaded from the official MediaPipe model bucket",
+      "compatibility": { "labels": "embedded-metadata-coco-80", "input": "320x320 uint8" }
+    },
+    {
+      "id": "translate-ml-kit",
+      "purpose": "Offline translation language packs",
+      "version": "platform",
+      "provider": "Google ML Kit Translation (models managed by ML Kit)",
+      "url": "",
+      "sha256": "",
+      "sizeBytes": 31457280,
+      "fileName": "managed",
+      "runtime": "ml-kit translate 17.0.3",
+      "license": "ML Kit Terms of Service",
+      "licenseUrl": "https://developers.google.com/ml-kit/terms",
+      "provenance": "Downloaded and verified by ML Kit's RemoteModelManager",
+      "platformManaged": true
+    }
+  ]
+}
