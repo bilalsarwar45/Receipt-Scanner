@@ -11,7 +11,7 @@ The full app is built from `docs/IMPLEMENTATION_BRIEF.md` and the design in `doc
 - 139 unit tests in 22 files, all passing in CI.
 - Release APK built in CI and signed with the committed **test key** (`docs/RELEASE_SIGNING.md`).
 - A sample host app (`samples/scanner-host`) reuses the QR, Text and Plant scanners without the app, ledger or storage. CI fails if it depends on them.
-- An emulator smoke test (Android 14) installs both APKs and walks the main screens on every push.
+- An emulator smoke test (Android 14) installs both **release** APKs on every push. It adds an expense by hand and another through a command, then checks the totals in Home, Library and Insights. Last result: all checks passed (CI run 39).
 
 ## Done
 

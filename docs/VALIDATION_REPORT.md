@@ -53,9 +53,22 @@ Steps and what is checked:
 8. Scan receipt opens the camera with its tips, and the emulator's virtual camera reaches the crop screen.
 9. Sample host app: lists QR code, Text and Plants, and opens the Text scanner sheet.
 
-Result: see the latest CI run. The release handover message gives the run that produced the delivered APK.
+**Result (CI run 39, commit `048c416`): every step passed, no crashes, no ANRs, no missed expectations.** The About screen on the release build showed "Test release key (sideload only)" with SHA-256 `5C:B1:6D:D7:…:7C:2C:B8`.
 
-## 4. Not tested
+Bugs this test found and that were fixed before the handover:
+- The command sheet slid off screen when the add preview appeared (its content grew taller than the screen). The sheet now has a fixed height and scrolls inside.
+- No module declared the `INTERNET` permission, so feature-pack and translation downloads would have failed. Declared in `core:model-packs` and `scanner:translation`; CI now prints the release APK's permissions.
+
+## 4. Delivered APKs (CI run 39)
+
+| File | Size (bytes) | SHA-256 |
+|---|---|---|
+| `app/build/outputs/apk/release/app-release.apk` | 185,291,427 | `959e7f22db4b0cb9456f59b1e694718c727a9b39e3eb916da9c780b4472d2ba8` |
+| `samples/scanner-host/build/outputs/apk/release/scanner-host-release.apk` | 100,098,455 | `d4b559bf9dd6f1681bbef3448de65de726dfdbb2feb040d50e440c5f9b698efe` |
+
+Both are universal APKs (arm64-v8a, armeabi-v7a, x86, x86_64) signed with the test key. Most of the size is native libraries for four CPU types; a Play App Bundle delivers only one phone's share, so the download from Play would be much smaller.
+
+## 5. Not tested
 
 - Any physical phone.
 - OCR, receipt parsing, plant, food and speech **accuracy** on real inputs; no benchmark set exists.
