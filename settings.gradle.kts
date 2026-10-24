@@ -63,6 +63,11 @@ val androidModules = listOf(
     ":core:model-packs",
     ":core:scanner-ui",
     ":scanner:qr",
+    ":scanner:text",
+    ":scanner:translation",
+    ":scanner:expiry",
+    ":scanner:math",
+    ":scanner:product",
     ":app",
 )
 
