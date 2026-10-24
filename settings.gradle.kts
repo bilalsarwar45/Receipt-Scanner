@@ -55,6 +55,7 @@ val jvmModules = listOf(
 // Android modules: UI, platform adapters, persistence and the apps.
 val androidModules = listOf(
     ":core:design-system",
+    ":data:local",
     ":app",
 )
 
