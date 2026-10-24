@@ -89,7 +89,7 @@ jobs:
             !**/build/reports/configuration-cache/
 
   smoke:
-    name: Emulator smoke test (install, launch, walk main screens)
+    name: Emulator smoke test (release APKs: install, launch, walk main screens)
     needs: android
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -111,7 +111,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
-          script: python3 tools/smoke_test.py "$(find apks -path '*app*' -name '*debug*.apk' | head -1)" "$(find apks -path '*scanner-host*' -name '*debug*.apk' | head -1)"
+          script: python3 tools/smoke_test.py "$(find apks -path '*app/build*' -path '*release*' -name '*.apk' | head -1)" "$(find apks -path '*scanner-host*' -path '*release*' -name '*.apk' | head -1)"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

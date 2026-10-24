@@ -3,7 +3,7 @@
 any crash. Each step prints the visible texts from a UI dump so the CI log shows what was on screen.
 Screenshots are saved to build/smoke/ and uploaded as an artifact.
 
-Usage: smoke_test.py <app-debug.apk> [<sample-debug.apk>]
+Usage: smoke_test.py <app.apk> [<sample.apk>]  (debug or release)
 """
 import os, re, subprocess, sys, time, xml.etree.ElementTree as ET
 
@@ -89,7 +89,8 @@ def clear_system_dialogs(root, pkg):
     return root
 
 
-def step(name, pkg=APP):
+def step(name, pkg=None):
+    pkg = pkg or APP
     time.sleep(2.5)
     root = clear_system_dialogs(dump(), pkg)
     for _ in range(3):  # a dump taken mid-animation can be nearly empty
@@ -188,7 +189,10 @@ def type_text(s):
 
 
 def main():
+    global APP
     app_apk = sys.argv[1]
+    if "debug" not in os.path.basename(app_apk):
+        APP = "com.receiptscan.app"
     # Let the freshly booted emulator settle so its launcher is idle before the app starts.
     adb("shell", "input", "keyevent", "3")
     time.sleep(25)
