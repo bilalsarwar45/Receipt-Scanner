@@ -117,3 +117,30 @@ jobs:
         with:
           name: smoke-screenshots
           path: build/smoke/
+
+  test-release:
+    # Publishes the smoke-tested release APKs as a GitHub prerelease so they can be downloaded on a phone.
+    name: Publish test build (prerelease)
+    needs: smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/claude/project-thread-d9p915'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apks
+          path: apks
+      - name: Create or replace the test-build prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cp "$(find apks -path '*app/build*' -path '*release*' -name '*.apk' | head -1)" receipt-scan-test.apk
+          cp "$(find apks -path '*scanner-host*' -path '*release*' -name '*.apk' | head -1)" scanner-host-sample-test.apk
+          sha256sum *.apk | tee SHA256SUMS.txt
+          gh release delete test-build --yes --cleanup-tag || true
+          gh release create test-build receipt-scan-test.apk scanner-host-sample-test.apk SHA256SUMS.txt \
+            --prerelease --target "$GITHUB_SHA" --title "Test build (signed with the TEST key)" \
+            --notes "Smoke-tested release APKs from commit $GITHUB_SHA. Signed with the committed TEST key (SHA-256 5C:B1:6D:D7:B7:02:90:18:C1:53:27:2F:35:35:DA:F0:F8:17:6B:26:39:8A:79:AD:03:2F:01:77:46:7C:2C:B8). For sideloading only; not for the Play Store. See docs/RELEASE_SIGNING.md and docs/VALIDATION_REPORT.md."
+          echo "Direct link: https://github.com/$GITHUB_REPOSITORY/releases/download/test-build/receipt-scan-test.apk"
