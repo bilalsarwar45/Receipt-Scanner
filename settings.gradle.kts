@@ -60,6 +60,9 @@ val androidModules = listOf(
     ":core:ocr",
     ":core:barcode",
     ":core:ml-runtime",
+    ":core:model-packs",
+    ":core:scanner-ui",
+    ":scanner:qr",
     ":app",
 )
 
