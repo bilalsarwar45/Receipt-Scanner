@@ -111,7 +111,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
-          script: python3 tools/smoke_test.py "$(find apks -path '*app/build*' -path '*release*' -name '*.apk' | head -1)" "$(find apks -path '*scanner-host*' -path '*release*' -name '*.apk' | head -1)"
+          script: python3 tools/smoke_test.py "$(find apks -path '*app/build*' -path '*release*' -name '*universal*.apk' | head -1)" "$(find apks -path '*scanner-host*' -path '*release*' -name '*.apk' | head -1)"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -136,11 +136,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          cp "$(find apks -path '*app/build*' -path '*release*' -name '*.apk' | head -1)" receipt-scan-test.apk
+          cp "$(find apks -path '*app/build*' -path '*release*' -name '*arm64-v8a*.apk' | head -1)" receipt-scan-test.apk
+          cp "$(find apks -path '*app/build*' -path '*release*' -name '*armeabi-v7a*.apk' | head -1)" receipt-scan-test-older-32bit-phones.apk
+          cp "$(find apks -path '*app/build*' -path '*release*' -name '*universal*.apk' | head -1)" receipt-scan-test-universal.apk
+          ls -l *.apk
           cp "$(find apks -path '*scanner-host*' -path '*release*' -name '*.apk' | head -1)" scanner-host-sample-test.apk
           sha256sum *.apk | tee SHA256SUMS.txt
           gh release delete test-build --yes --cleanup-tag || true
-          gh release create test-build receipt-scan-test.apk scanner-host-sample-test.apk SHA256SUMS.txt \
+          gh release create test-build receipt-scan-test.apk receipt-scan-test-older-32bit-phones.apk receipt-scan-test-universal.apk scanner-host-sample-test.apk SHA256SUMS.txt \
             --prerelease --target "$GITHUB_SHA" --title "Test build (signed with the TEST key)" \
-            --notes "Smoke-tested release APKs from commit $GITHUB_SHA. Signed with the committed TEST key (SHA-256 5C:B1:6D:D7:B7:02:90:18:C1:53:27:2F:35:35:DA:F0:F8:17:6B:26:39:8A:79:AD:03:2F:01:77:46:7C:2C:B8). For sideloading only; not for the Play Store. See docs/RELEASE_SIGNING.md and docs/VALIDATION_REPORT.md."
+            --notes "receipt-scan-test.apk is for almost every phone made since 2017 (64-bit ARM). Use receipt-scan-test-older-32bit-phones.apk only if that one says it is not compatible. The universal APK works everywhere but is much larger. Smoke-tested release APKs from commit $GITHUB_SHA. Signed with the committed TEST key (SHA-256 5C:B1:6D:D7:B7:02:90:18:C1:53:27:2F:35:35:DA:F0:F8:17:6B:26:39:8A:79:AD:03:2F:01:77:46:7C:2C:B8). For sideloading only; not for the Play Store. See docs/RELEASE_SIGNING.md and docs/VALIDATION_REPORT.md."
           echo "Direct link: https://github.com/$GITHUB_REPOSITORY/releases/download/test-build/receipt-scan-test.apk"
