@@ -61,6 +61,17 @@ android {
         buildConfig = true
     }
 
+    // Per-CPU APKs for sideloading: the universal APK carries native code for four CPU types (~185 MB).
+    // Most phones need only arm64-v8a. CI attaches both to the test-build prerelease.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = true
+        }
+    }
+
     packaging {
         jniLibs { useLegacyPackaging = false }
         resources { excludes += setOf("META-INF/{AL2.0,LGPL2.1}", "META-INF/LICENSE*", "META-INF/NOTICE*") }

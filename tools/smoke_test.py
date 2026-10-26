@@ -198,6 +198,49 @@ def type_text(s):
     adb("shell", "input", "text", s.replace(" ", "%s"))
 
 
+FAIL_TITLES = ["Not available on this phone", "Text recognition failed", "Couldn't open that file", "No text found", "Couldn't take the photo", "Something went wrong"]
+
+
+def go_home():
+    for _ in range(5):
+        r = dump()
+        if find(r, "Scan receipt") and find(r, "Add manually"):
+            return r
+        adb("shell", "input", "keyevent", "4")
+        time.sleep(1.5)
+    adb("shell", "am", "start", "-W", "-n", f"{APP}/com.receiptscan.app.MainActivity")
+    time.sleep(4)
+    return dump()
+
+
+def no_failure(root, name):
+    shown = " | ".join(texts(root))
+    for f in FAIL_TITLES:
+        if f in shown:
+            print(f"!!! {name}: failure shown: {f}")
+            missed.append(f"{name}: {f}")
+
+
+def tap_picked_photo(root):
+    """Pick the test image in either the Android photo picker or the Files picker."""
+    for label in ("receipt.png", "receipt", "Photo taken", "Photo"):
+        p = find(root, label, contains=True)
+        if p:
+            adb("shell", "input", "tap", str(p[0]), str(p[1]))
+            return True
+    print("(no photo found in picker)")
+    missed.append("picker: test photo not found")
+    return False
+
+
+def app_log():
+    pid = adb("shell", "pidof", APP, check=False).strip().split()
+    log = adb("logcat", "-d", "-v", "brief", check=False).splitlines()
+    keys = ["receiptscan", "mlkit", "MLKit", "MediaPipe", "tflite", "TfLite", "AndroidRuntime", "Vision", "PhotoPicker", "System.err"]
+    keep = [l for l in log if (l[:2] in ("E/", "W/", "F/")) and ((pid and f"({pid[0].rjust(5)})" in l) or any(k in l for k in keys))]
+    print("\n==== app warnings/errors (last 150):\n" + "\n".join(keep[-150:]))
+
+
 def main():
     global APP
     app_apk = sys.argv[1]
@@ -266,8 +309,53 @@ def main():
     r = step("18-back-home")
     tap(r, "Scan receipt", scroll=False)
     r = step("19-receipt-camera")
-    adb("shell", "input", "keyevent", "4")
-    step("20-after-camera-back")
+    tap(r, "Got it", scroll=False)
+    r = step("19b-camera-ready")
+    if find(r, "Take photo"):
+        tap(r, "Take photo", scroll=False)
+        time.sleep(3)
+    r = step("20-receipt-crop")
+    if tap(r, "Read receipt", scroll=False):
+        time.sleep(10)
+        r = step("21-camera-receipt-read")
+        no_failure(r, "21-camera-receipt-read")
+
+    # Gallery import of a known receipt image.
+    adb("push", "tools/fixtures/receipt.png", "/sdcard/Pictures/receipt.png")
+    adb("shell", "content", "call", "--method", "scan_volume", "--uri", "content://media", "--arg", "external_primary", check=False)
+    time.sleep(2)
+    r = go_home()
+    tap(r, "Import", scroll=False)
+    time.sleep(3)
+    r = step("22-picker")
+    tap_picked_photo(r)
+    time.sleep(4)
+    r = step("23-imported-crop")
+    no_failure(r, "23-imported-crop")
+    if tap(r, "Read receipt", scroll=False):
+        time.sleep(12)
+        r = step("24-imported-receipt-read")
+        no_failure(r, "24-imported-receipt-read")
+        shown = " | ".join(texts(r)) + " | " + " | ".join(t for _, _, t in edits(r))
+        if "1404" in shown or "1,404" in shown:
+            print("ok 24-imported-receipt-read: total 1404 read")
+        else:
+            print("!!! 24-imported-receipt-read: total 1404 not shown")
+            missed.append("24: total 1404 not read")
+
+    # Plant tool with the emulator camera (checks the model loads and runs; the scene is not a plant).
+    r = go_home()
+    tap(r, "Tools", last=True, scroll=False)
+    r = step("25-tools")
+    tap(r, "Plants")
+    r = step("26-plant-camera")
+    tap(r, "Got it", scroll=False)
+    r = step("26b-plant-ready")
+    if tap(r, "Take photo", scroll=False):
+        time.sleep(10)
+        r = step("27-plant-result")
+        no_failure(r, "27-plant-result")
+    app_log()
 
     if len(sys.argv) > 2 and sys.argv[2]:
         print(adb("install", "-r", "-g", sys.argv[2]))
